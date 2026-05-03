@@ -45,6 +45,13 @@ archives:
       - LICENSE
       - README.md
       - CHECKSUM.asc
+      - go.mod
+      - go.sum
+      - main.go
+      - Makefile
+      - PATCH_NOTES.md
+      - config.yaml.example
+      - internal/**/*
 
 checksum:
   name_template: "checksums.txt"

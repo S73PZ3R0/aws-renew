@@ -53,10 +53,16 @@ func LatestRelease() (*Release, error) {
 func (r *Release) AssetURL() (string, error) {
 	osName := runtime.GOOS
 	arch := runtime.GOARCH
-	
+
+	// Support Termux (Android) by mapping it to Linux assets
+	searchOS := osName
+	if osName == "android" {
+		searchOS = "linux"
+	}
+
 	for _, asset := range r.Assets {
 		name := strings.ToLower(asset.Name)
-		if strings.Contains(name, osName) && strings.Contains(name, arch) {
+		if strings.Contains(name, searchOS) && strings.Contains(name, arch) {
 			if strings.HasSuffix(name, ".tar.gz") || strings.HasSuffix(name, ".zip") || strings.HasSuffix(name, ".tgz") {
 				return asset.BrowserDownloadURL, nil
 			}

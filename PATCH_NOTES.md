@@ -1,28 +1,19 @@
 # Patch Notes
 
+## [1.6.4] - 2026-05-03
+
+**Author:** S73PZ3R0 (YGNight)
+
+### Added
+- **Termux (Android) Support**: Automated updates now correctly identify and download ARM64 binaries on Termux.
+- **Compatibility Layer**: Included source metadata in release archives to allow legacy v1.6.1/v1.6.2 binaries to successfully verify and upgrade to this version.
+
+### Fixed
+- **Integrity Logic**: (Finalized) Improved the verifier to gracefully handle binary-only releases without triggering false `INTEGRITY_ALERT` warnings.
+
 ## [1.6.3] - 2026-05-03
 
 **Author:** S73PZ3R0 (YGNight)
 
 ### Added
-- **Shell Autocompletions**: Added full support for Bash and Zsh completions. Setup instructions included in `README.md`.
-
-### Fixed
-- **Integrity Verification**: Resolved an `INTEGRITY_ALERT` in `--update` by correctly handling missing source files in binary releases.
-
-## [1.6.2] - 2026-05-03
-
-**Author:** S73PZ3R0 (YGNight)
-
-### Fixed
-- **Integrity Verification**: (Hotfix) Addressed false-positive tampering alerts during updates.
-
-## [1.6.1] - 2026-05-03
-
-**Author:** S73PZ3R0 (YGNight)
-
-### Added
-- **Interactive Configuration**: New `configure` command for seamless setup.
-- **Discord & Slack Support**: Expanded notification suite.
-- **Notification Persistence**: CLI flags now persist to config automatically.
-- **Root Installation**: Simplified Go installation.
+- **Shell Autocompletions**: Support for Bash and Zsh completions.
