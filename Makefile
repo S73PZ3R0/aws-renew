@@ -17,6 +17,7 @@ build: build-local
 
 update-readme-version:
 	@sed -i "s|version-[0-9]*\.[0-9]*\.[0-9]*-gold|version-$(VERSION)-gold|" README.md
+	@sed -i "s|Installation (v[0-9]*\.[0-9]*\.[0-9]* Go)|Installation (v$(VERSION) Go)|" README.md
 	@echo "README version updated to $(VERSION)"
 
 build-local: update-readme-version

@@ -17,7 +17,7 @@ Built for professional terminal environments, featuring a modern "Orchestrator" 
 
 ---
 
-## 🚀 Installation (v1.6.4 Go)
+## 🚀 Installation (v1.6.7 Go)
 
 ### Source Installation
 ```bash
