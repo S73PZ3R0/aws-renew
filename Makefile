@@ -45,6 +45,9 @@ verify: build
 	./$(BINARY_NAME) --verify
 
 release: update-readme-version checksum
+	@if ! git diff --quiet README.md CHECKSUM.asc; then \
+		git add README.md CHECKSUM.asc && git commit -m "v$(VERSION): pre-release sync" && git push && git tag -f v$(VERSION) && git push origin v$(VERSION) --force; \
+	fi
 	@echo "Creating production release with GoReleaser..."
 	@goreleaser release --clean --parallelism 1
 
