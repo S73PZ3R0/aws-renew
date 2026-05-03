@@ -113,9 +113,19 @@ Verify the integrity of the binary against the included GPG-signed `CHECKSUM.asc
 ---
 
 ## 📱 Termux Support
-`aws-renew` is fully compatible with **Termux on Android**. 
-- Target platform: **`linux/arm64`** (aarch64).
-- Use `./aws-renew --daemon` for background monitoring (system services like systemd are not supported in Termux).
+`aws-renew` is fully compatible with **Termux on Android**.
+- Install via `go install github.com/S73PZ3R0/aws-renew@latest`, or download `aws-renew_linux_arm64.tar.gz` from the releases page.
+- `--update` works normally on `linux/arm64` builds.
+
+### Background service (runit/sv)
+Requires the `termux-services` package (`pkg install termux-services`):
+```bash
+aws-renew service install   # creates $PREFIX/var/service/aws-renew/run
+aws-renew service start
+aws-renew service stop
+aws-renew service status
+```
+Use `aws-renew --daemon` for a foreground session instead.
 
 ---
 

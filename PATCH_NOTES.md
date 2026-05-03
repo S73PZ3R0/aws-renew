@@ -1,5 +1,14 @@
 # Patch Notes
 
+## [1.6.7] - 2026-05-04
+
+**Author:** S73PZ3R0 (YGNight)
+
+### Added
+- **Termux Service Management**: `aws-renew service install/start/stop/status` now works on Termux via `sv` (runit). Requires `pkg install termux-services`. Creates a proper run script at `$PREFIX/var/service/aws-renew/run`.
+
+---
+
 ## [1.6.6] - 2026-05-04
 
 **Author:** S73PZ3R0 (YGNight)
