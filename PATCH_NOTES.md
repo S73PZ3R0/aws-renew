@@ -6,6 +6,7 @@
 
 ### Fixed
 - **Secure Update**: `CHECKSUM.asc` is now GPG-clearsigned at build time, fixing the `--update` command which was failing with `SECURITY_ALERT: Update binary is UNSIGNED`.
+- **Termux Update**: `--update` now works on Termux. Removed the `android` build target (Termux is a Linux userspace — `linux/arm64` is correct). Old `GOOS=android` binaries fall back to the `linux/arm64` asset and apply the update via `os.Args[0]` when `os.Executable()` is unavailable.
 
 ---
 

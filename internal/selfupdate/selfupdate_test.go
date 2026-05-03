@@ -101,7 +101,6 @@ func TestAssetURL(t *testing.T) {
 		Assets: []Asset{
 			{Name: "aws-renew_linux_amd64.tar.gz", BrowserDownloadURL: "https://example.com/linux_amd64"},
 			{Name: "aws-renew_linux_arm64.tar.gz", BrowserDownloadURL: "https://example.com/linux_arm64"},
-			{Name: "aws-renew_android_arm64.tar.gz", BrowserDownloadURL: "https://example.com/android_arm64"},
 			{Name: "aws-renew_darwin_arm64.tar.gz", BrowserDownloadURL: "https://example.com/darwin_arm64"},
 			{Name: "aws-renew_windows_amd64.zip", BrowserDownloadURL: "https://example.com/windows_amd64"},
 			{Name: "checksums.txt", BrowserDownloadURL: "https://example.com/checksums"},
@@ -116,7 +115,8 @@ func TestAssetURL(t *testing.T) {
 	}{
 		{"linux", "amd64", "https://example.com/linux_amd64", false},
 		{"linux", "arm64", "https://example.com/linux_arm64", false},
-		{"android", "arm64", "https://example.com/android_arm64", false},
+		// android (old Termux builds) must resolve to linux/arm64
+		{"android", "arm64", "https://example.com/linux_arm64", false},
 		{"darwin", "arm64", "https://example.com/darwin_arm64", false},
 		{"windows", "amd64", "https://example.com/windows_amd64", false},
 		{"linux", "386", "", true},
@@ -141,40 +141,18 @@ func TestAssetURL(t *testing.T) {
 	}
 }
 
-func TestAssetURLAndroidFallback(t *testing.T) {
-	// Release without a dedicated android asset — should fall back to linux/arm64.
-	rel := &Release{
-		TagName: "v1.0.0",
-		Assets: []Asset{
-			{Name: "aws-renew_linux_arm64.tar.gz", BrowserDownloadURL: "https://example.com/linux_arm64"},
-		},
-	}
-	url, err := assetURLFor(rel, "android", "arm64")
-	if err != nil {
-		t.Fatalf("expected fallback to linux/arm64, got error: %v", err)
-	}
-	if url != "https://example.com/linux_arm64" {
-		t.Errorf("got %q, want linux_arm64 fallback", url)
-	}
-}
 
 // assetURLFor is a testable version of Release.AssetURL with explicit os/arch.
 func assetURLFor(r *Release, goos, goarch string) (string, error) {
+	searchOS := goos
+	if goos == "android" {
+		searchOS = "linux"
+	}
 	for _, asset := range r.Assets {
 		name := strings.ToLower(asset.Name)
-		if strings.Contains(name, goos) && strings.Contains(name, goarch) {
+		if strings.Contains(name, searchOS) && strings.Contains(name, goarch) {
 			if strings.HasSuffix(name, ".tar.gz") || strings.HasSuffix(name, ".zip") || strings.HasSuffix(name, ".tgz") {
 				return asset.BrowserDownloadURL, nil
-			}
-		}
-	}
-	if goos == "android" {
-		for _, asset := range r.Assets {
-			name := strings.ToLower(asset.Name)
-			if strings.Contains(name, "linux") && strings.Contains(name, goarch) {
-				if strings.HasSuffix(name, ".tar.gz") || strings.HasSuffix(name, ".tgz") {
-					return asset.BrowserDownloadURL, nil
-				}
 			}
 		}
 	}

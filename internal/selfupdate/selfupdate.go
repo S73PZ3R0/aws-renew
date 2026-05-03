@@ -54,24 +54,17 @@ func (r *Release) AssetURL() (string, error) {
 	osName := runtime.GOOS
 	arch := runtime.GOARCH
 
-	for _, asset := range r.Assets {
-		name := strings.ToLower(asset.Name)
-		if strings.Contains(name, osName) && strings.Contains(name, arch) {
-			if strings.HasSuffix(name, ".tar.gz") || strings.HasSuffix(name, ".zip") || strings.HasSuffix(name, ".tgz") {
-				return asset.BrowserDownloadURL, nil
-			}
-		}
+	searchOS := osName
+	// GOOS=android binaries (old Termux builds) should update via linux/arm64.
+	if osName == "android" {
+		searchOS = "linux"
 	}
 
-	// Termux reports GOOS=linux at runtime but we publish an android/arm64 asset;
-	// fall back to linux/arm64 if no android asset is found.
-	if osName == "android" {
-		for _, asset := range r.Assets {
-			name := strings.ToLower(asset.Name)
-			if strings.Contains(name, "linux") && strings.Contains(name, arch) {
-				if strings.HasSuffix(name, ".tar.gz") || strings.HasSuffix(name, ".tgz") {
-					return asset.BrowserDownloadURL, nil
-				}
+	for _, asset := range r.Assets {
+		name := strings.ToLower(asset.Name)
+		if strings.Contains(name, searchOS) && strings.Contains(name, arch) {
+			if strings.HasSuffix(name, ".tar.gz") || strings.HasSuffix(name, ".zip") || strings.HasSuffix(name, ".tgz") {
+				return asset.BrowserDownloadURL, nil
 			}
 		}
 	}
@@ -208,7 +201,21 @@ func Apply(url string) error {
 	}
 	defer f.Close()
 
-	return update.Apply(f, update.Options{})
+	// os.Executable() is not implemented on GOOS=android (Termux).
+	// Resolve the target path via os.Args[0] as a fallback so the update
+	// can still be applied from an android-compiled binary.
+	applyOpts := update.Options{}
+	if _, err := os.Executable(); err != nil {
+		execPath := os.Args[0]
+		if !filepath.IsAbs(execPath) {
+			if wd, werr := os.Getwd(); werr == nil {
+				execPath = filepath.Join(wd, execPath)
+			}
+		}
+		applyOpts.TargetPath = execPath
+	}
+
+	return update.Apply(f, applyOpts)
 }
 
 // extractTarGz finds the aws-renew binary inside a tar.gz archive and returns
