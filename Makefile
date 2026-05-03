@@ -31,9 +31,9 @@ test:
 	@go test -v ./...
 
 checksum:
-	@echo "Generating checksums..."
-	@find . -maxdepth 4 -not -path '*/.*' -not -path './dist/*' -not -path './build/*' -not -name "$(BINARY_NAME)" -not -name "CHECKSUM.asc" -type f -exec sha256sum {} + | sed 's| \./| |' | sort -k 2 > CHECKSUM.asc
-	@echo "Checksums updated in CHECKSUM.asc"
+	@echo "Generating and signing checksums..."
+	@find . -maxdepth 4 -not -path '*/.*' -not -path './dist/*' -not -path './build/*' -not -name "$(BINARY_NAME)" -not -name "CHECKSUM.asc" -type f -exec sha256sum {} + | sed 's| \./| |' | sort -k 2 | gpg --batch --yes --local-user "S73PZ3R0" --output CHECKSUM.asc --clearsign -
+	@echo "Checksums signed in CHECKSUM.asc"
 
 verify: build
 	./$(BINARY_NAME) --verify

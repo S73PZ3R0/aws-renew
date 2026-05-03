@@ -1,5 +1,14 @@
 # Patch Notes
 
+## [1.6.6] - 2026-05-04
+
+**Author:** S73PZ3R0 (YGNight)
+
+### Fixed
+- **Secure Update**: `CHECKSUM.asc` is now GPG-clearsigned at build time, fixing the `--update` command which was failing with `SECURITY_ALERT: Update binary is UNSIGNED`.
+
+---
+
 ## [1.6.5] - 2026-05-03
 
 **Author:** S73PZ3R0 (YGNight)

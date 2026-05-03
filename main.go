@@ -26,7 +26,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var version = "1.6.5"
+var version = "1.6.6"
 
 func getVersion() string {
 	if version != "devel" {
