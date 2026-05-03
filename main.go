@@ -469,6 +469,24 @@ func runOrchestrator(ctx context.Context, cfg *config.Config) (bool, error) {
 						}
 						res.Status = tasks[tid].Status
 						res.Details = tasks[tid].Msg
+
+						// Notification logic
+						n := notify.New(notify.Config{
+							WebhookURL:     cfg.Notify.WebhookURL,
+							TelegramToken:  cfg.Notify.Telegram.BotToken,
+							TelegramChatID: cfg.Notify.Telegram.ChatID,
+						})
+						if n.Enabled() && (result.Updated > 0 || result.Revoked > 0) {
+							_ = n.Send(notify.Event{
+								Instance: tid,
+								Name:     inst.Name(),
+								Region:   res.Region,
+								NewIP:    displayIP,
+								Updated:  result.Updated,
+								Revoked:  result.Revoked,
+								Skipped:  result.Skipped,
+							})
+						}
 					}
 				}
 			}

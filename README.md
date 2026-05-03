@@ -2,35 +2,36 @@
 
 [![Go Version](https://img.shields.io/badge/go-1.24%2B-blue.svg)](https://go.dev/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-1.5.0-gold.svg)](PATCH_NOTES.md)
+[![Version](https://img.shields.io/badge/version-1.6.0-gold.svg)](PATCH_NOTES.md)
 [![Go Tests](https://github.com/S73PZ3R0/aws-renew/actions/workflows/test.yml/badge.svg)](https://github.com/S73PZ3R0/aws-renew/actions/workflows/test.yml)
 
 
 **A high-fidelity, high-performance DevOps utility written in Go to automatically synchronize AWS EC2 security group rules with your current public IP address.**
 
+**Author:** S73PZ3R0 (YGNight)
+
 > [!IMPORTANT]
-> **Python version is now DEPRECATED.** Development has shifted entirely to Go for Version 1.5 to provide a single-binary, cross-platform experience with improved performance, native TUI capabilities, and broader platform support.
+> **Python version is now DEPRECATED.** Development has shifted entirely to Go for Version 1.6 to provide a single-binary, cross-platform experience with improved performance, native TUI capabilities, and broader platform support.
 
 Built for professional terminal environments, featuring a modern "Orchestrator" TUI (powered by Bubble Tea), automated authentication fallback, and headless JSON output for CI/CD automation.
 
 ---
 
-## 🚀 Installation (v1.5 Go)
+## 🚀 Installation (v1.6 Go)
 
-### Direct Go Installation (Recommended)
-Install the latest production version directly to your `$GOPATH/bin`:
-```bash
-go install github.com/S73PZ3R0/aws-renew/cmd/aws-renew@latest
-```
-
-### Build from Source
+### Source Installation
 ```bash
 # Clone the repository
 git clone https://github.com/S73PZ3R0/aws-renew.git
 cd aws-renew
 
-# Build using Makefile
-make build
+# Install to your GOPATH/bin
+make install
+```
+
+### Direct Go Installation
+```bash
+go install github.com/S73PZ3R0/aws-renew@latest
 ```
 
 ---

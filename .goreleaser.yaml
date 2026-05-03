@@ -8,7 +8,7 @@ before:
 
 builds:
   - id: aws-renew
-    main: ./cmd/aws-renew
+    main: .
     binary: aws-renew
     env:
       - CGO_ENABLED=0

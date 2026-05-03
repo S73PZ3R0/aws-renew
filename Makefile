@@ -16,14 +16,19 @@ build: build-local
 
 build-local:
 	@echo "Building for current platform..."
-	go build -o $(BINARY_NAME) ./cmd/aws-renew
+	@go build -o $(BINARY_NAME) .
+	@$(MAKE) checksum
+
+install:
+	@echo "Installing to $(GOPATH)/bin..."
+	@go install .
 
 snapshot:
 	@echo "Building multi-platform snapshots sequentially (limited resources)..."
-	goreleaser build --snapshot --clean --parallelism 1
+	@goreleaser build --snapshot --clean --parallelism 1
 
 test:
-	go test -v ./...
+	@go test -v ./...
 
 checksum:
 	@echo "Generating checksums..."
