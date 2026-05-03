@@ -97,6 +97,12 @@ func VerifyFiles(baseDir ...string) (matches []string, mismatches []string, err 
 		
 		fullPath := filepath.Join(targetDir, filePath)
 
+		// If the file doesn't exist, we skip it. This allows binary-only releases
+		// to verify against a master CHECKSUM.asc that also contains source hashes.
+		if _, err := os.Stat(fullPath); os.IsNotExist(err) {
+			continue
+		}
+
 		fh, err := os.Open(fullPath)
 		if err != nil {
 			mismatches = append(mismatches, filePath)
