@@ -1,6 +1,7 @@
-.PHONY: build test checksum verify clean help
+.PHONY: build test checksum verify clean help update-readme-version
 
 BINARY_NAME=aws-renew
+VERSION=$(shell grep 'var version' main.go | sed 's/.*"\(.*\)".*/\1/')
 
 help:
 	@echo "Usage: make [target]"
@@ -14,7 +15,11 @@ help:
 
 build: build-local
 
-build-local:
+update-readme-version:
+	@sed -i "s|version-[0-9]*\.[0-9]*\.[0-9]*-gold|version-$(VERSION)-gold|" README.md
+	@echo "README version updated to $(VERSION)"
+
+build-local: update-readme-version
 	@echo "Building for current platform..."
 	@go build -o $(BINARY_NAME) .
 	@$(MAKE) checksum

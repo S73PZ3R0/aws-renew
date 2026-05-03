@@ -5,6 +5,7 @@ project_name: aws-renew
 before:
   hooks:
     - go mod tidy
+    - make update-readme-version
 
 builds:
   - id: aws-renew
