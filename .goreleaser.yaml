@@ -48,6 +48,7 @@ archives:
       - go.mod
       - go.sum
       - main.go
+      - main_test.go
       - Makefile
       - PATCH_NOTES.md
       - config.yaml.example

@@ -38,7 +38,7 @@ test:
 
 checksum:
 	@echo "Generating and signing checksums..."
-	@find . -maxdepth 4 -not -path '*/.*' -not -path './dist/*' -not -path './build/*' -not -name "$(BINARY_NAME)" -not -name "CHECKSUM.asc" -type f -exec sha256sum {} + | sed 's| \./| |' | sort -k 2 | gpg --batch --yes --local-user "S73PZ3R0" --output CHECKSUM.asc --clearsign -
+	@{ find internal -type f; echo "LICENSE"; echo "README.md"; echo "go.mod"; echo "go.sum"; echo "main.go"; echo "main_test.go"; echo "Makefile"; echo "PATCH_NOTES.md"; echo "config.yaml.example"; } | sort | xargs sha256sum | sort -k 2 | gpg --batch --yes --local-user "S73PZ3R0" --output CHECKSUM.asc --clearsign -
 	@echo "Checksums signed in CHECKSUM.asc"
 
 verify: build

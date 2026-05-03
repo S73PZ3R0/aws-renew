@@ -1,5 +1,15 @@
 # Patch Notes
 
+## [1.6.8] - 2026-05-04
+
+**Author:** S73PZ3R0 (YGNight)
+
+### Fixed
+- **`--update` Integrity Check**: Removed erroneous `stripTopDir` from archive extraction — GoReleaser archives have no top-level wrapper directory, so stripping the first path component was incorrectly rewriting `internal/pkg/file.go` → `pkg/file.go`, causing all internal files to fail hash verification.
+- **Checksum Scope**: `make checksum` now hashes only the files included in the release archive. Previously it used `find .` which included development-only files absent from the archive, causing spurious `INTEGRITY_ALERT` failures on `--update`.
+
+---
+
 ## [1.6.7] - 2026-05-04
 
 **Author:** S73PZ3R0 (YGNight)

@@ -280,7 +280,7 @@ func extractZip(data []byte) (io.Reader, error) {
 }
 
 // unpackTarGz extracts all files from a tar.gz archive to dst, preserving
-// directory structure and stripping the single top-level directory component.
+// directory structure. GoReleaser archives have no top-level wrapper directory.
 func unpackTarGz(r io.Reader, dst string) error {
 	gz, err := gzip.NewReader(r)
 	if err != nil {
@@ -297,7 +297,7 @@ func unpackTarGz(r io.Reader, dst string) error {
 		if err != nil {
 			return err
 		}
-		relPath := stripTopDir(hdr.Name)
+		relPath := hdr.Name
 		if relPath == "" {
 			continue
 		}
@@ -329,14 +329,14 @@ func unpackTarGz(r io.Reader, dst string) error {
 }
 
 // unpackZip extracts all files from a zip archive to dst, preserving directory
-// structure and stripping the single top-level directory component.
+// structure. GoReleaser archives have no top-level wrapper directory.
 func unpackZip(data []byte, dst string) error {
 	zr, err := zip.NewReader(bytes.NewReader(data), int64(len(data)))
 	if err != nil {
 		return err
 	}
 	for _, f := range zr.File {
-		relPath := stripTopDir(f.Name)
+		relPath := f.Name
 		if relPath == "" {
 			continue
 		}
@@ -371,12 +371,3 @@ func unpackZip(data []byte, dst string) error {
 	return nil
 }
 
-// stripTopDir removes the leading top-level directory component from an archive
-// path (e.g. "aws-renew_linux_amd64/main.go" → "main.go").
-func stripTopDir(name string) string {
-	parts := strings.SplitN(name, "/", 2)
-	if len(parts) == 2 {
-		return parts[1]
-	}
-	return name
-}
