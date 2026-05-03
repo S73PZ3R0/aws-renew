@@ -1,0 +1,81 @@
+version: 2
+
+project_name: aws-renew
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - id: aws-renew
+    main: ./cmd/aws-renew
+    binary: aws-renew
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+      - "386"
+    ignore:
+      - goos: darwin
+        goarch: arm64
+      - goos: darwin
+        goarch: "386"
+      - goos: windows
+        goarch: arm64
+      - goos: linux
+        goarch: "386"
+    ldflags:
+      - -s -w
+
+archives:
+  - id: default
+    formats:
+      - tar.gz
+    format_overrides:
+      - goos: windows
+        formats:
+          - zip
+    name_template: "{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}"
+    files:
+      - LICENSE
+      - README.md
+      - CHECKSUM.asc
+
+checksum:
+  name_template: "checksums.txt"
+  algorithm: sha256
+
+signs:
+  - artifacts: checksum
+    args:
+      - "--batch"
+      - "--yes"
+      - "--local-user"
+      - "S73PZ3R0"
+      - "--output"
+      - "${signature}"
+      - "--detach-sign"
+      - "${artifact}"
+
+release:
+  github:
+    owner: S73PZ3R0
+    name: aws-renew
+  draft: false
+  prerelease: auto
+  name_template: "v{{ .Version }}"
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+      - "^chore:"
+      - Merge pull request
+      - Merge branch

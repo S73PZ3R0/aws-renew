@@ -1,0 +1,38 @@
+AWS-RENEW Contribution & Source Integrity License
+
+Copyright (c) 2026 S73PZ3R0
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, subject to the following conditions:
+
+1. MANDATORY PUBLIC CONTRIBUTION
+   Any modifications, enhancements, or derivative works based on this Software 
+   must be performed and maintained through a public fork of the original 
+   repository (github.com/S73PZ3R0/aws-renew) or submitted as a formal 
+   contribution (Pull Request) to the original repository. The redistribution 
+   of modified versions without a publicly traceable link to the original 
+   source lineage is strictly prohibited.
+
+2. PRESERVATION OF LINEAGE
+   All version control metadata, commit history, and historical attribution 
+   records associated with the Software must be preserved in their entirety in 
+   all copies and derivative works. The intentional stripping of historical 
+   metadata, flattening of the contribution record, or any action that 
+   obscures the Software's developmental lineage is a violation of this License.
+
+3. ATTRIBUTION
+   The above copyright notice, this permission notice, and the original 
+   project identifiers must be included in all copies or substantial portions 
+   of the Software.
+
+4. NO WARRANTY
+   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+   IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+   FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+   AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+   LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+   OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+   SOFTWARE.

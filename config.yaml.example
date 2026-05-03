@@ -1,0 +1,45 @@
+# AWS-RENEW Configuration Example
+# Save this as ~/.config/aws-renew/config.yaml or use --config path/to/file.yaml
+
+# AWS Profile to use (from ~/.aws/credentials)
+profile: default
+
+# Comma-separated list of regions to scan (e.g., "us-east-1,us-west-2")
+# Use "all" to scan every available AWS region.
+regions: us-east-1
+
+# Target ports to manage (comma-separated). Default is 22.
+ssh_port: 22
+
+# Specific Instance IDs or Name tags to watch. 
+# If empty, the tool will discover all instances in the specified regions.
+instances:
+  - "prod-api-server"
+  - "i-0abcdef1234567890"
+
+# How often the daemon should check for IP changes (e.g., "1m", "5m", "1h")
+# Only applicable when running with --daemon.
+poll_interval: 5m
+
+# Enable "Zero-Trust" cleanup.
+# If true, revokes ANY rule with the managed description that doesn't match current state.
+cleanup: false
+
+# Preview changes without applying them.
+dry_run: false
+
+# Custom description tag for managed security group rules.
+rule_description: "Auto-updated by aws-renew"
+
+# Path to log file for daemon mode.
+log_file: "/var/log/aws-renew.log"
+
+# Notification settings
+notify:
+  # Generic HTTP Webhook (e.g., Slack, Discord, or custom endpoint)
+  webhook_url: ""
+  
+  # Telegram Bot Notifications
+  telegram:
+    bot_token: ""
+    chat_id: ""
