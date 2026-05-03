@@ -44,7 +44,7 @@ checksum:
 verify: build
 	./$(BINARY_NAME) --verify
 
-release:
+release: update-readme-version checksum
 	@echo "Creating production release with GoReleaser..."
 	@goreleaser release --clean --parallelism 1
 
