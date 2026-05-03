@@ -72,7 +72,18 @@ func (n *Notifier) Send(ev Event) error {
 }
 
 func (n *Notifier) webhook(ev Event) error {
-...
+	body, _ := json.Marshal(ev)
+	resp, err := n.client.Post(n.cfg.WebhookURL, "application/json", bytes.NewReader(body))
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode >= 400 {
+		return fmt.Errorf("HTTP %d", resp.StatusCode)
+	}
+	return nil
+}
+
 func (n *Notifier) discord(ev Event) error {
 	ipInfo := ev.NewIP
 	if ev.OldIP != "" {
@@ -126,17 +137,6 @@ func (n *Notifier) slack(ev Event) error {
 	defer resp.Body.Close()
 	return nil
 }
-	body, _ := json.Marshal(ev)
-	resp, err := n.client.Post(n.cfg.WebhookURL, "application/json", bytes.NewReader(body))
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode >= 400 {
-		return fmt.Errorf("HTTP %d", resp.StatusCode)
-	}
-	return nil
-}
 
 func (n *Notifier) telegram(ev Event) error {
 	ipInfo := ev.NewIP
@@ -170,18 +170,22 @@ func (n *Notifier) telegram(ev Event) error {
 	return nil
 }
 
-// escMD escapes special characters for Telegram MarkdownV2.
 func escMD(s string) string {
 	special := `\_*[]()~` + "`" + `>#+-=|{}.!`
 	out := make([]byte, 0, len(s))
 	for _, c := range []byte(s) {
+		matched := false
 		for _, sp := range []byte(special) {
 			if c == sp {
 				out = append(out, '\\')
+				out = append(out, c)
+				matched = true
 				break
 			}
 		}
-		out = append(out, c)
+		if !matched {
+			out = append(out, c)
+		}
 	}
 	return string(out)
 }
