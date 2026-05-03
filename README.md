@@ -2,7 +2,7 @@
 
 [![Go Version](https://img.shields.io/badge/go-1.24%2B-blue.svg)](https://go.dev/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-1.6.7-gold.svg)](PATCH_NOTES.md)
+[![Version](https://img.shields.io/badge/version-1.6.8-gold.svg)](PATCH_NOTES.md)
 [![Go Tests](https://github.com/S73PZ3R0/aws-renew/actions/workflows/test.yml/badge.svg)](https://github.com/S73PZ3R0/aws-renew/actions/workflows/test.yml)
 
 
@@ -17,7 +17,7 @@ Built for professional terminal environments, featuring a modern "Orchestrator" 
 
 ---
 
-## 🚀 Installation (v1.6.7 Go)
+## 🚀 Installation (v1.6.8 Go)
 
 ### Source Installation
 ```bash
