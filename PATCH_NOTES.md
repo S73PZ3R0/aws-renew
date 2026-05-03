@@ -1,5 +1,19 @@
 # Patch Notes
 
+## [1.6.5] - 2026-05-03
+
+**Author:** S73PZ3R0 (YGNight)
+
+### Added
+- **Richer Notifications**: All notification channels (Telegram, Discord, Slack, Webhook) now include the managed ports and security group names/IDs in alert messages.
+
+### Fixed
+- **Duplicate Notifications**: Removed a redundant post-run notification block that was sending a second alert for Webhook and Telegram channels after the per-instance notifications had already fired.
+- **Test Coverage**: Added full test suite for the `notify` package covering all channels, port/SG fields, HTTP error handling, and multi-channel delivery.
+- **Update Integrity**: Fixed archive extraction to preserve directory structure so `--verify` and `--update` correctly validate all source file hashes rather than silently skipping nested files.
+
+---
+
 ## [1.6.4] - 2026-05-03
 
 **Author:** S73PZ3R0 (YGNight)

@@ -9,14 +9,16 @@ import (
 )
 
 type Event struct {
-	Instance string `json:"instance"`
-	Name     string `json:"name"`
-	Region   string `json:"region"`
-	OldIP    string `json:"old_ip,omitempty"`
-	NewIP    string `json:"new_ip"`
-	Updated  int    `json:"updated"`
-	Revoked  int    `json:"revoked"`
-	Skipped  int    `json:"skipped"`
+	Instance       string   `json:"instance"`
+	Name           string   `json:"name"`
+	Region         string   `json:"region"`
+	OldIP          string   `json:"old_ip,omitempty"`
+	NewIP          string   `json:"new_ip"`
+	Ports          []int    `json:"ports,omitempty"`
+	SecurityGroups []string `json:"security_groups,omitempty"`
+	Updated        int      `json:"updated"`
+	Revoked        int      `json:"revoked"`
+	Skipped        int      `json:"skipped"`
 }
 
 type Config struct {
@@ -31,6 +33,8 @@ type Notifier struct {
 	cfg    Config
 	client *http.Client
 }
+
+var telegramAPIBase = "https://api.telegram.org"
 
 func New(cfg Config) *Notifier {
 	return &Notifier{cfg: cfg, client: &http.Client{Timeout: 10 * time.Second}}
@@ -89,18 +93,31 @@ func (n *Notifier) discord(ev Event) error {
 	if ev.OldIP != "" {
 		ipInfo = fmt.Sprintf("%s → %s", ev.OldIP, ev.NewIP)
 	}
+	fields := []map[string]interface{}{
+		{"name": "Instance", "value": fmt.Sprintf("`%s` (%s)", ev.Name, ev.Instance), "inline": false},
+		{"name": "Region", "value": fmt.Sprintf("`%s`", ev.Region), "inline": true},
+		{"name": "IP Address", "value": fmt.Sprintf("`%s`", ipInfo), "inline": true},
+	}
+	if len(ev.Ports) > 0 {
+		fields = append(fields, map[string]interface{}{
+			"name": "Ports", "value": fmt.Sprintf("`%s`", formatPorts(ev.Ports)), "inline": true,
+		})
+	}
+	if len(ev.SecurityGroups) > 0 {
+		fields = append(fields, map[string]interface{}{
+			"name": "Security Groups", "value": fmt.Sprintf("`%s`", joinStrings(ev.SecurityGroups)), "inline": false,
+		})
+	}
+	fields = append(fields, map[string]interface{}{
+		"name": "Result", "value": fmt.Sprintf("✅ %d Updated | 🗑 %d Revoked | ⏭ %d Skipped", ev.Updated, ev.Revoked, ev.Skipped), "inline": false,
+	})
 	payload := map[string]interface{}{
 		"content": "",
 		"embeds": []map[string]interface{}{
 			{
-				"title": "🔐 AWS Access Renewer",
-				"color": 5814783,
-				"fields": []map[string]interface{}{
-					{"name": "Instance", "value": fmt.Sprintf("`%s` (%s)", ev.Name, ev.Instance), "inline": false},
-					{"name": "Region", "value": fmt.Sprintf("`%s`", ev.Region), "inline": true},
-					{"name": "IP Address", "value": fmt.Sprintf("`%s`", ipInfo), "inline": true},
-					{"name": "Result", "value": fmt.Sprintf("✅ %d Updated | 🗑 %d Revoked | ⏭ %d Skipped", ev.Updated, ev.Revoked, ev.Skipped), "inline": false},
-				},
+				"title":  "🔐 AWS Access Renewer",
+				"color":  5814783,
+				"fields": fields,
 				"footer": map[string]string{"text": "aws-renew security event"},
 			},
 		},
@@ -111,6 +128,9 @@ func (n *Notifier) discord(ev Event) error {
 		return err
 	}
 	defer resp.Body.Close()
+	if resp.StatusCode >= 400 {
+		return fmt.Errorf("HTTP %d", resp.StatusCode)
+	}
 	return nil
 }
 
@@ -123,11 +143,16 @@ func (n *Notifier) slack(ev Event) error {
 		"*🔐 AWS Access Renewer*\n"+
 			"• *Instance:* `%s` (%s)\n"+
 			"• *Region:* `%s`\n"+
-			"• *IP:* `%s`\n"+
-			"• *Result:* %d Updated, %d Revoked, %d Skipped",
+			"• *IP:* `%s`\n",
 		ev.Name, ev.Instance, ev.Region, ipInfo,
-		ev.Updated, ev.Revoked, ev.Skipped,
 	)
+	if len(ev.Ports) > 0 {
+		text += fmt.Sprintf("• *Ports:* `%s`\n", formatPorts(ev.Ports))
+	}
+	if len(ev.SecurityGroups) > 0 {
+		text += fmt.Sprintf("• *Security Groups:* `%s`\n", joinStrings(ev.SecurityGroups))
+	}
+	text += fmt.Sprintf("• *Result:* %d Updated, %d Revoked, %d Skipped", ev.Updated, ev.Revoked, ev.Skipped)
 	payload := map[string]interface{}{"text": text}
 	body, _ := json.Marshal(payload)
 	resp, err := n.client.Post(n.cfg.SlackURL, "application/json", bytes.NewReader(body))
@@ -135,6 +160,9 @@ func (n *Notifier) slack(ev Event) error {
 		return err
 	}
 	defer resp.Body.Close()
+	if resp.StatusCode >= 400 {
+		return fmt.Errorf("HTTP %d", resp.StatusCode)
+	}
 	return nil
 }
 
@@ -147,9 +175,17 @@ func (n *Notifier) telegram(ev Event) error {
 		"🔐 *AWS Access Renewer*\n\n"+
 			"📦 Instance: `%s` \\(%s\\)\n"+
 			"🌍 Region: `%s`\n"+
-			"🌐 IP: `%s`\n\n"+
-			"✅ Updated: %d  🗑 Revoked: %d  ⏭ Skipped: %d",
+			"🌐 IP: `%s`\n",
 		escMD(ev.Name), escMD(ev.Instance), escMD(ev.Region), escMD(ipInfo),
+	)
+	if len(ev.Ports) > 0 {
+		text += fmt.Sprintf("🔌 Ports: `%s`\n", escMD(formatPorts(ev.Ports)))
+	}
+	if len(ev.SecurityGroups) > 0 {
+		text += fmt.Sprintf("🛡 Groups: `%s`\n", escMD(joinStrings(ev.SecurityGroups)))
+	}
+	text += fmt.Sprintf(
+		"\n✅ Updated: %d  🗑 Revoked: %d  ⏭ Skipped: %d",
 		ev.Updated, ev.Revoked, ev.Skipped,
 	)
 	payload := map[string]interface{}{
@@ -158,7 +194,7 @@ func (n *Notifier) telegram(ev Event) error {
 		"parse_mode": "MarkdownV2",
 	}
 	body, _ := json.Marshal(payload)
-	url := fmt.Sprintf("https://api.telegram.org/bot%s/sendMessage", n.cfg.TelegramToken)
+	url := fmt.Sprintf("%s/bot%s/sendMessage", telegramAPIBase, n.cfg.TelegramToken)
 	resp, err := n.client.Post(url, "application/json", bytes.NewReader(body))
 	if err != nil {
 		return err
@@ -168,6 +204,25 @@ func (n *Notifier) telegram(ev Event) error {
 		return fmt.Errorf("HTTP %d", resp.StatusCode)
 	}
 	return nil
+}
+
+func formatPorts(ports []int) string {
+	parts := make([]string, len(ports))
+	for i, p := range ports {
+		parts[i] = fmt.Sprintf("%d", p)
+	}
+	return joinStrings(parts)
+}
+
+func joinStrings(ss []string) string {
+	result := ""
+	for i, s := range ss {
+		if i > 0 {
+			result += ", "
+		}
+		result += s
+	}
+	return result
 }
 
 func escMD(s string) string {

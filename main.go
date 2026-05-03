@@ -26,7 +26,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var version = "1.6.4"
+var version = "1.6.5"
 
 func getVersion() string {
 	if version != "devel" {
@@ -409,13 +409,14 @@ func runOrchestrator(ctx context.Context, cfg *config.Config) (bool, error) {
 
 	// 5. Execute updates.
 	type batchResult struct {
-		InstanceID string `json:"instance_id"`
-		Name       string `json:"name"`
-		Region     string `json:"region"`
-		Status     string `json:"status"`
-		Details    string `json:"details"`
-		updated    int
-		revoked    int
+		InstanceID     string   `json:"instance_id"`
+		Name           string   `json:"name"`
+		Region         string   `json:"region"`
+		Status         string   `json:"status"`
+		Details        string   `json:"details"`
+		SecurityGroups []string `json:"security_groups,omitempty"`
+		updated        int
+		revoked        int
 	}
 
 	tasks := map[string]*ui.TaskStatus{}
@@ -433,10 +434,19 @@ func runOrchestrator(ctx context.Context, cfg *config.Config) (bool, error) {
 		for _, inst := range selected {
 			inst := inst
 			tid := inst.InstanceID
+			sgLabels := make([]string, 0, len(inst.SecurityGroups))
+			for _, sg := range inst.SecurityGroups {
+				label := sg.GroupID
+				if sg.GroupName != "" {
+					label = sg.GroupName + " (" + sg.GroupID + ")"
+				}
+				sgLabels = append(sgLabels, label)
+			}
 			res := batchResult{
-				InstanceID: inst.InstanceID,
-				Name:       inst.Name(),
-				Region:     regionLabel(inst.Region),
+				InstanceID:     inst.InstanceID,
+				Name:           inst.Name(),
+				Region:         regionLabel(inst.Region),
+				SecurityGroups: sgLabels,
 			}
 
 			if prog != nil {
@@ -511,13 +521,15 @@ func runOrchestrator(ctx context.Context, cfg *config.Config) (bool, error) {
 						})
 						if n.Enabled() && (result.Updated > 0 || result.Revoked > 0) {
 							_ = n.Send(notify.Event{
-								Instance: tid,
-								Name:     inst.Name(),
-								Region:   res.Region,
-								NewIP:    displayIP,
-								Updated:  result.Updated,
-								Revoked:  result.Revoked,
-								Skipped:  result.Skipped,
+								Instance:       tid,
+								Name:           inst.Name(),
+								Region:         res.Region,
+								NewIP:          displayIP,
+								Ports:          ports,
+								SecurityGroups: res.SecurityGroups,
+								Updated:        result.Updated,
+								Revoked:        result.Revoked,
+								Skipped:        result.Skipped,
 							})
 						}
 					}
@@ -559,28 +571,6 @@ func runOrchestrator(ctx context.Context, cfg *config.Config) (bool, error) {
 			stats.Skipped++
 		case "error":
 			stats.Error++
-		}
-	}
-
-	// Send notifications if configured.
-	notifier := notify.New(notify.Config{
-		WebhookURL:     cfg.Notify.WebhookURL,
-		TelegramToken:  cfg.Notify.Telegram.BotToken,
-		TelegramChatID: cfg.Notify.Telegram.ChatID,
-	})
-	if notifier.Enabled() && stats.Success > 0 {
-		for _, r := range batchResults {
-			if r.Status == "success" {
-				_ = notifier.Send(notify.Event{
-					Instance: r.InstanceID,
-					Name:     r.Name,
-					Region:   r.Region,
-					NewIP:    srcIPs[0],
-					Updated:  r.updated,
-					Revoked:  r.revoked,
-					Skipped:  stats.Skipped,
-				})
-			}
 		}
 	}
 

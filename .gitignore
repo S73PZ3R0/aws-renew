@@ -11,6 +11,7 @@ __pycache__/
 build/
 develop-eggs/
 dist/
+dist/config.yaml
 downloads/
 eggs/
 .eggs/
@@ -154,6 +155,7 @@ cython_debug/
 # AI coding assistants
 ## Anthropic / Claude Code
 .claude/
+CLAUDE.md
 ## Cursor
 .cursor/
 .cursorrules

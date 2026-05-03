@@ -16,6 +16,7 @@ builds:
       - linux
       - darwin
       - windows
+      - android
     goarch:
       - amd64
       - arm64
@@ -28,6 +29,10 @@ builds:
       - goos: windows
         goarch: arm64
       - goos: linux
+        goarch: "386"
+      - goos: android
+        goarch: amd64
+      - goos: android
         goarch: "386"
     ldflags:
       - -s -w

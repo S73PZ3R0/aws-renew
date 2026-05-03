@@ -54,20 +54,28 @@ func (r *Release) AssetURL() (string, error) {
 	osName := runtime.GOOS
 	arch := runtime.GOARCH
 
-	// Support Termux (Android) by mapping it to Linux assets
-	searchOS := osName
-	if osName == "android" {
-		searchOS = "linux"
-	}
-
 	for _, asset := range r.Assets {
 		name := strings.ToLower(asset.Name)
-		if strings.Contains(name, searchOS) && strings.Contains(name, arch) {
+		if strings.Contains(name, osName) && strings.Contains(name, arch) {
 			if strings.HasSuffix(name, ".tar.gz") || strings.HasSuffix(name, ".zip") || strings.HasSuffix(name, ".tgz") {
 				return asset.BrowserDownloadURL, nil
 			}
 		}
 	}
+
+	// Termux reports GOOS=linux at runtime but we publish an android/arm64 asset;
+	// fall back to linux/arm64 if no android asset is found.
+	if osName == "android" {
+		for _, asset := range r.Assets {
+			name := strings.ToLower(asset.Name)
+			if strings.Contains(name, "linux") && strings.Contains(name, arch) {
+				if strings.HasSuffix(name, ".tar.gz") || strings.HasSuffix(name, ".tgz") {
+					return asset.BrowserDownloadURL, nil
+				}
+			}
+		}
+	}
+
 	return "", fmt.Errorf("no asset found for %s/%s in release %s", osName, arch, r.TagName)
 }
 
@@ -203,7 +211,69 @@ func Apply(url string) error {
 	return update.Apply(f, update.Options{})
 }
 
-// unpackTarGz extracts all files from a tar.gz archive to dst.
+// extractTarGz finds the aws-renew binary inside a tar.gz archive and returns
+// its content as a reader.
+func extractTarGz(r io.Reader) (io.Reader, error) {
+	gz, err := gzip.NewReader(r)
+	if err != nil {
+		return nil, err
+	}
+	defer gz.Close()
+
+	tr := tar.NewReader(gz)
+	for {
+		hdr, err := tr.Next()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return nil, err
+		}
+		if hdr.Typeflag != tar.TypeReg {
+			continue
+		}
+		base := strings.ToLower(filepath.Base(hdr.Name))
+		if base == "aws-renew" || base == "aws-renew.exe" {
+			var buf bytes.Buffer
+			if _, err := io.Copy(&buf, tr); err != nil {
+				return nil, err
+			}
+			return &buf, nil
+		}
+	}
+	return nil, fmt.Errorf("no binary found in archive")
+}
+
+// extractZip finds the aws-renew binary inside a zip archive and returns its
+// content as a reader.
+func extractZip(data []byte) (io.Reader, error) {
+	zr, err := zip.NewReader(bytes.NewReader(data), int64(len(data)))
+	if err != nil {
+		return nil, err
+	}
+	for _, f := range zr.File {
+		if f.FileInfo().IsDir() {
+			continue
+		}
+		base := strings.ToLower(filepath.Base(f.Name))
+		if base == "aws-renew" || base == "aws-renew.exe" {
+			rc, err := f.Open()
+			if err != nil {
+				return nil, err
+			}
+			defer rc.Close()
+			var buf bytes.Buffer
+			if _, err := io.Copy(&buf, rc); err != nil {
+				return nil, err
+			}
+			return &buf, nil
+		}
+	}
+	return nil, fmt.Errorf("no binary found in zip archive")
+}
+
+// unpackTarGz extracts all files from a tar.gz archive to dst, preserving
+// directory structure and stripping the single top-level directory component.
 func unpackTarGz(r io.Reader, dst string) error {
 	gz, err := gzip.NewReader(r)
 	if err != nil {
@@ -220,34 +290,60 @@ func unpackTarGz(r io.Reader, dst string) error {
 		if err != nil {
 			return err
 		}
-		if hdr.Typeflag != tar.TypeReg {
+		relPath := stripTopDir(hdr.Name)
+		if relPath == "" {
 			continue
 		}
-		target := filepath.Join(dst, filepath.Base(hdr.Name))
-		f, err := os.OpenFile(target, os.O_CREATE|os.O_RDWR, os.FileMode(hdr.Mode))
-		if err != nil {
-			return err
+		target := filepath.Join(dst, relPath)
+		if !strings.HasPrefix(filepath.Clean(target), filepath.Clean(dst)+string(os.PathSeparator)) {
+			continue
 		}
-		if _, err := io.Copy(f, tr); err != nil {
+		switch hdr.Typeflag {
+		case tar.TypeDir:
+			if err := os.MkdirAll(target, 0755); err != nil {
+				return err
+			}
+		case tar.TypeReg:
+			if err := os.MkdirAll(filepath.Dir(target), 0755); err != nil {
+				return err
+			}
+			f, err := os.OpenFile(target, os.O_CREATE|os.O_RDWR, os.FileMode(hdr.Mode))
+			if err != nil {
+				return err
+			}
+			if _, err := io.Copy(f, tr); err != nil {
+				f.Close()
+				return err
+			}
 			f.Close()
-			return err
 		}
-		f.Close()
 	}
 	return nil
 }
 
-// unpackZip extracts all files from a zip archive to dst.
+// unpackZip extracts all files from a zip archive to dst, preserving directory
+// structure and stripping the single top-level directory component.
 func unpackZip(data []byte, dst string) error {
 	zr, err := zip.NewReader(bytes.NewReader(data), int64(len(data)))
 	if err != nil {
 		return err
 	}
 	for _, f := range zr.File {
-		if f.FileInfo().IsDir() {
+		relPath := stripTopDir(f.Name)
+		if relPath == "" {
 			continue
 		}
-		target := filepath.Join(dst, filepath.Base(f.Name))
+		target := filepath.Join(dst, relPath)
+		if !strings.HasPrefix(filepath.Clean(target), filepath.Clean(dst)+string(os.PathSeparator)) {
+			continue
+		}
+		if f.FileInfo().IsDir() {
+			os.MkdirAll(target, 0755)
+			continue
+		}
+		if err := os.MkdirAll(filepath.Dir(target), 0755); err != nil {
+			return err
+		}
 		rc, err := f.Open()
 		if err != nil {
 			return err
@@ -266,4 +362,14 @@ func unpackZip(data []byte, dst string) error {
 		rc.Close()
 	}
 	return nil
+}
+
+// stripTopDir removes the leading top-level directory component from an archive
+// path (e.g. "aws-renew_linux_amd64/main.go" → "main.go").
+func stripTopDir(name string) string {
+	parts := strings.SplitN(name, "/", 2)
+	if len(parts) == 2 {
+		return parts[1]
+	}
+	return name
 }
