@@ -23,6 +23,8 @@ type Config struct {
 	WebhookURL     string
 	TelegramToken  string
 	TelegramChatID string
+	DiscordURL     string
+	SlackURL       string
 }
 
 type Notifier struct {
@@ -35,7 +37,10 @@ func New(cfg Config) *Notifier {
 }
 
 func (n *Notifier) Enabled() bool {
-	return n.cfg.WebhookURL != "" || (n.cfg.TelegramToken != "" && n.cfg.TelegramChatID != "")
+	return n.cfg.WebhookURL != "" ||
+		(n.cfg.TelegramToken != "" && n.cfg.TelegramChatID != "") ||
+		n.cfg.DiscordURL != "" ||
+		n.cfg.SlackURL != ""
 }
 
 func (n *Notifier) Send(ev Event) error {
@@ -50,6 +55,16 @@ func (n *Notifier) Send(ev Event) error {
 			errs = append(errs, fmt.Sprintf("telegram: %v", err))
 		}
 	}
+	if n.cfg.DiscordURL != "" {
+		if err := n.discord(ev); err != nil {
+			errs = append(errs, fmt.Sprintf("discord: %v", err))
+		}
+	}
+	if n.cfg.SlackURL != "" {
+		if err := n.slack(ev); err != nil {
+			errs = append(errs, fmt.Sprintf("slack: %v", err))
+		}
+	}
 	if len(errs) > 0 {
 		return fmt.Errorf("notification errors: %v", errs)
 	}
@@ -57,6 +72,60 @@ func (n *Notifier) Send(ev Event) error {
 }
 
 func (n *Notifier) webhook(ev Event) error {
+...
+func (n *Notifier) discord(ev Event) error {
+	ipInfo := ev.NewIP
+	if ev.OldIP != "" {
+		ipInfo = fmt.Sprintf("%s → %s", ev.OldIP, ev.NewIP)
+	}
+	payload := map[string]interface{}{
+		"content": "",
+		"embeds": []map[string]interface{}{
+			{
+				"title": "🔐 AWS Access Renewer",
+				"color": 5814783,
+				"fields": []map[string]interface{}{
+					{"name": "Instance", "value": fmt.Sprintf("`%s` (%s)", ev.Name, ev.Instance), "inline": false},
+					{"name": "Region", "value": fmt.Sprintf("`%s`", ev.Region), "inline": true},
+					{"name": "IP Address", "value": fmt.Sprintf("`%s`", ipInfo), "inline": true},
+					{"name": "Result", "value": fmt.Sprintf("✅ %d Updated | 🗑 %d Revoked | ⏭ %d Skipped", ev.Updated, ev.Revoked, ev.Skipped), "inline": false},
+				},
+				"footer": map[string]string{"text": "aws-renew security event"},
+			},
+		},
+	}
+	body, _ := json.Marshal(payload)
+	resp, err := n.client.Post(n.cfg.DiscordURL, "application/json", bytes.NewReader(body))
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	return nil
+}
+
+func (n *Notifier) slack(ev Event) error {
+	ipInfo := ev.NewIP
+	if ev.OldIP != "" {
+		ipInfo = fmt.Sprintf("%s → %s", ev.OldIP, ev.NewIP)
+	}
+	text := fmt.Sprintf(
+		"*🔐 AWS Access Renewer*\n"+
+			"• *Instance:* `%s` (%s)\n"+
+			"• *Region:* `%s`\n"+
+			"• *IP:* `%s`\n"+
+			"• *Result:* %d Updated, %d Revoked, %d Skipped",
+		ev.Name, ev.Instance, ev.Region, ipInfo,
+		ev.Updated, ev.Revoked, ev.Skipped,
+	)
+	payload := map[string]interface{}{"text": text}
+	body, _ := json.Marshal(payload)
+	resp, err := n.client.Post(n.cfg.SlackURL, "application/json", bytes.NewReader(body))
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	return nil
+}
 	body, _ := json.Marshal(ev)
 	resp, err := n.client.Post(n.cfg.WebhookURL, "application/json", bytes.NewReader(body))
 	if err != nil {

@@ -16,6 +16,8 @@ type TelegramConfig struct {
 type NotifyConfig struct {
 	WebhookURL string         `yaml:"webhook_url"`
 	Telegram   TelegramConfig `yaml:"telegram"`
+	DiscordURL string         `yaml:"discord_url"`
+	SlackURL   string         `yaml:"slack_url"`
 }
 
 type Config struct {

@@ -2,7 +2,7 @@
 
 [![Go Version](https://img.shields.io/badge/go-1.24%2B-blue.svg)](https://go.dev/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-1.6.0-gold.svg)](PATCH_NOTES.md)
+[![Version](https://img.shields.io/badge/version-1.6.1-gold.svg)](PATCH_NOTES.md)
 [![Go Tests](https://github.com/S73PZ3R0/aws-renew/actions/workflows/test.yml/badge.svg)](https://github.com/S73PZ3R0/aws-renew/actions/workflows/test.yml)
 
 
@@ -17,7 +17,7 @@ Built for professional terminal environments, featuring a modern "Orchestrator" 
 
 ---
 
-## 🚀 Installation (v1.6 Go)
+## 🚀 Installation (v1.6.1 Go)
 
 ### Source Installation
 ```bash
@@ -32,6 +32,12 @@ make install
 ### Direct Go Installation
 ```bash
 go install github.com/S73PZ3R0/aws-renew@latest
+```
+
+### Initial Configuration
+Setup your AWS credentials and notification channels using the interactive wizard:
+```bash
+aws-renew configure
 ```
 
 ---
@@ -68,7 +74,18 @@ Watch for IP changes and update rules automatically in the background.
 ./aws-renew --daemon
 ```
 
-### 4. **Integrity Verification**
+### 4. Notifications
+Configure real-time alerts for security group updates:
+```bash
+# Telegram
+aws-renew --telegram-btoken "TOKEN" --telegram-cid "ID"
+# Discord
+aws-renew --discord-webhook "URL"
+# Slack
+aws-renew --slack-webhook "URL"
+```
+
+### 5. **Integrity Verification**
 Verify the integrity of the binary against the included GPG-signed `CHECKSUM.asc`.
 ```bash
 ./aws-renew --verify

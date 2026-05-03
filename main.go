@@ -55,6 +55,10 @@ var (
 	flagUpdate          bool
 	flagDaemon          bool
 	flagRuleDescription string
+	flagTelegramToken   string
+	flagTelegramChatID  string
+	flagDiscordWebhook  string
+	flagSlackWebhook    string
 )
 
 func loadCfg() *config.Config {
@@ -110,6 +114,33 @@ func run(cmd *cobra.Command, args []string) error {
 	cfg := loadCfg()
 	ctx := context.Background()
 	currentVer := getVersion()
+
+	// Persistence for Notification CLI flags
+	updatedConfig := false
+	if flagTelegramToken != "" {
+		cfg.Notify.Telegram.BotToken = flagTelegramToken
+		updatedConfig = true
+	}
+	if flagTelegramChatID != "" {
+		cfg.Notify.Telegram.ChatID = flagTelegramChatID
+		updatedConfig = true
+	}
+	if flagDiscordWebhook != "" {
+		cfg.Notify.DiscordURL = flagDiscordWebhook
+		updatedConfig = true
+	}
+	if flagSlackWebhook != "" {
+		cfg.Notify.SlackURL = flagSlackWebhook
+		updatedConfig = true
+	}
+
+	if updatedConfig {
+		if err := config.Save(cfg); err != nil {
+			fmt.Print(ui.WarningLine(fmt.Sprintf("Failed to save config: %v", err)))
+		} else {
+			fmt.Print(ui.SuccessLine("Notification configuration persisted to config.yaml"))
+		}
+	}
 
 	if flagUpdate {
 		fmt.Print(ui.InfoLine("Checking for updates..."))
@@ -475,6 +506,8 @@ func runOrchestrator(ctx context.Context, cfg *config.Config) (bool, error) {
 							WebhookURL:     cfg.Notify.WebhookURL,
 							TelegramToken:  cfg.Notify.Telegram.BotToken,
 							TelegramChatID: cfg.Notify.Telegram.ChatID,
+							DiscordURL:     cfg.Notify.DiscordURL,
+							SlackURL:       cfg.Notify.SlackURL,
 						})
 						if n.Enabled() && (result.Updated > 0 || result.Revoked > 0) {
 							_ = n.Send(notify.Event{
@@ -630,6 +663,75 @@ func jsonErr(msg, status string) string {
 	return string(b)
 }
 
+func configureCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "configure",
+		Short: "Interactively configure the application",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cfg := loadCfg()
+			fmt.Println(ui.StyleBold.Render("\n 🛠  AWS-RENEW CONFIGURATION \n"))
+
+			fmt.Print("AWS Profile [", cfg.Profile, "]: ")
+			var profile string
+			fmt.Scanln(&profile)
+			if profile != "" {
+				cfg.Profile = profile
+			}
+
+			fmt.Print("AWS Regions (comma-separated or 'all') [", cfg.Regions, "]: ")
+			var regions string
+			fmt.Scanln(&regions)
+			if regions != "" {
+				cfg.Regions = regions
+			}
+
+			fmt.Print("SSH Ports (comma-separated) [", cfg.SSHPort, "]: ")
+			var ports string
+			fmt.Scanln(&ports)
+			if ports != "" {
+				cfg.SSHPort = ports
+			}
+
+			fmt.Println(ui.StyleBold.Render("\n 🔔 NOTIFICATIONS"))
+
+			fmt.Print("Telegram Bot Token: ")
+			var tToken string
+			fmt.Scanln(&tToken)
+			if tToken != "" {
+				cfg.Notify.Telegram.BotToken = tToken
+			}
+
+			fmt.Print("Telegram Chat ID: ")
+			var tCID string
+			fmt.Scanln(&tCID)
+			if tCID != "" {
+				cfg.Notify.Telegram.ChatID = tCID
+			}
+
+			fmt.Print("Discord Webhook URL: ")
+			var dURL string
+			fmt.Scanln(&dURL)
+			if dURL != "" {
+				cfg.Notify.DiscordURL = dURL
+			}
+
+			fmt.Print("Slack Webhook URL: ")
+			var sURL string
+			fmt.Scanln(&sURL)
+			if sURL != "" {
+				cfg.Notify.SlackURL = sURL
+			}
+
+			if err := config.Save(cfg); err != nil {
+				return fmt.Errorf("failed to save config: %w", err)
+			}
+
+			fmt.Println(ui.SuccessLine("\nConfiguration saved successfully!"))
+			return nil
+		},
+	}
+}
+
 func main() {
 	rootCmd := &cobra.Command{
 		Use:     "aws-renew",
@@ -653,6 +755,12 @@ func main() {
 	f.BoolVar(&flagUpdate, "update", false, "Update to the latest GitHub release")
 	f.BoolVar(&flagDaemon, "daemon", false, "Run in watch/daemon mode (foreground)")
 	f.StringVar(&flagRuleDescription, "rule-description", "", "Description tag for managed rules")
+	f.StringVar(&flagTelegramToken, "telegram-btoken", "", "Set Telegram Bot Token and save to config")
+	f.StringVar(&flagTelegramChatID, "telegram-cid", "", "Set Telegram Chat ID and save to config")
+	f.StringVar(&flagDiscordWebhook, "discord-webhook", "", "Set Discord Webhook URL and save to config")
+	f.StringVar(&flagSlackWebhook, "slack-webhook", "", "Set Slack Webhook URL and save to config")
+
+	rootCmd.AddCommand(configureCmd())
 
 	serviceCmd := &cobra.Command{
 		Use:   "service",
