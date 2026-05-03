@@ -2,7 +2,7 @@
 
 [![Go Version](https://img.shields.io/badge/go-1.24%2B-blue.svg)](https://go.dev/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-1.6.2-gold.svg)](PATCH_NOTES.md)
+[![Version](https://img.shields.io/badge/version-1.6.3-gold.svg)](PATCH_NOTES.md)
 [![Go Tests](https://github.com/S73PZ3R0/aws-renew/actions/workflows/test.yml/badge.svg)](https://github.com/S73PZ3R0/aws-renew/actions/workflows/test.yml)
 
 
@@ -17,7 +17,7 @@ Built for professional terminal environments, featuring a modern "Orchestrator" 
 
 ---
 
-## 🚀 Installation (v1.6.2 Go)
+## 🚀 Installation (v1.6.3 Go)
 
 ### Source Installation
 ```bash
@@ -38,6 +38,25 @@ go install github.com/S73PZ3R0/aws-renew@latest
 Setup your AWS credentials and notification channels using the interactive wizard:
 ```bash
 aws-renew configure
+```
+
+### Shell Autocompletions
+To enable autocompletions for your shell:
+
+#### **Bash**
+```bash
+# Current session
+source <(aws-renew completion bash)
+# Permanent
+aws-renew completion bash | sudo tee /etc/bash_completion.d/aws-renew > /dev/null
+```
+
+#### **Zsh**
+```bash
+# Current session
+source <(aws-renew completion zsh)
+# Permanent
+aws-renew completion zsh > "${fpath[1]}/_aws-renew"
 ```
 
 ---
